@@ -19,6 +19,13 @@ $ ipa2adhoc.rb baseURL file…
 
 * ipaファイルのファイル名に空白が入っているとインストールできません
 
+== 動作環境
+
+* plist の読み書きに RubyCocoa を使用しているので Mac OS X でなければ動作しません。
+* 以下のライブラリが必要です
+  * RubyCocoa
+  * zipruby
+
 == TODO
 
 == 開発履歴
