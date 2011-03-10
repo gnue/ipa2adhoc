@@ -5,7 +5,7 @@
 = AdHocビルドのipaファイルからiOSデバイスに直接インストールするための plist と HTML を生成する
 
 Authors::   GNUE(鵺)
-Version::   1.0 2011-02-02 gnue
+Version::   1.0.1 2011-03-10 gnue
 Copyright:: Copyright (C) gnue, 2011. All rights reserved.
 License::   MIT ライセンスに準拠
 
@@ -30,6 +30,9 @@ $ ipa2adhoc.rb baseURL file…
 
 == 開発履歴
 
+* 1.0.1 2011-03-10
+  * Mac/PCでもアイコンが見れるように最適化前の PNG を保存するようにした
+  * 引数が足りないときに Usage を表示するようにした
 * 1.0 2011-02-02
   * とりあえず作ってみた
 
@@ -44,6 +47,8 @@ require 'uri'
 
 
 class IPA
+	TOOLS = '/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin'
+
 	def initialize(path, baseURL)
 		@path = path
 		@baseURL = baseURL
@@ -101,16 +106,20 @@ class IPA
 		Zip::Archive.open(@path) do |archives|
 			archives.each do |a|
 				if /^Payload\/.+.app\/#{iconFile}$/ =~ a.name
-					File.open(path, 'w') { |f|
-						f.print(a.read)
-					}
+					temp = Tempfile.new(path)
+					temp.print(a.read)
+					temp.close
+
+					# 最適化前の PNG に戻す
+					system("#{TOOLS}/pngcrush", '-revert-iphone-optimizations', '-q',
+							temp.path, path)
 
 					return path
 				end
 			end
 		end
 
-		path
+		nil
 	end
 
 	def ganerate
@@ -147,6 +156,12 @@ end
 
 
 if __FILE__ == $0
+	if ARGV.length < 2
+		cmd = File.basename(__FILE__)
+		print "Usage: #{cmd} baseURL file…\n"
+		exit
+	end
+
 	baseURL = ARGV.shift
 	adhocs = []
 
