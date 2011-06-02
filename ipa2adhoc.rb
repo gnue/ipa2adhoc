@@ -25,6 +25,7 @@ $ ipa2adhoc.rb baseURL file…
 * 以下のライブラリが必要です（gem でインストールできます）
   * zipruby
   * CFPropertyList
+* PNG を変換する pngcrush は iOS SDK に含まれています
 
 == TODO
 
@@ -34,6 +35,7 @@ $ ipa2adhoc.rb baseURL file…
   * バイナリplist の読み書きに CFPropertyList を使用するようにした 
   * RubyCocoa を使わないので Mac OS X 以外の環境でも使用できるようになりました
   * Ruby 1.9 に対応
+  * pngcrush がない場合は iOS用の PNG をそのまま使用するようにした
 * 1.0.1 2011-03-10
   * Mac/PCでもアイコンが見れるように最適化前の PNG を保存するようにした
   * 引数が足りないときに Usage を表示するようにした
@@ -108,13 +110,19 @@ class IPA
 		Zip::Archive.open(@path) do |archives|
 			archives.each do |a|
 				if /^Payload\/.+.app\/#{iconFile}$/ =~ a.name
-					temp = Tempfile.new(path)
-					temp.print(a.read)
-					temp.close
+					icon = a.read
 
-					# 最適化前の PNG に戻す
-					system("#{TOOLS}/pngcrush", '-revert-iphone-optimizations', '-q',
-							temp.path, path)
+					pngcrush = "#{TOOLS}/pngcrush"
+					if File.exists?(pngcrush)
+						# 最適化前の PNG に戻す
+						temp = Tempfile.new(path)
+						temp.write(icon)
+						temp.close
+
+						system(pngcrush, '-revert-iphone-optimizations', '-q', temp.path, path)
+					else
+						File.new(path, 'w').write(icon)
+					end
 
 					return path
 				end
