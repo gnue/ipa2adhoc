@@ -1,11 +1,12 @@
 #!/usr/bin/env ruby
+# coding: UTF-8
 
 =begin
 
 = AdHocビルドのipaファイルからiOSデバイスに直接インストールするための plist と HTML を生成する
 
 Authors::   GNUE(鵺)
-Version::   1.0.1 2011-03-10 gnue
+Version::   1.1 2011-06-02 gnue
 Copyright:: Copyright (C) gnue, 2011. All rights reserved.
 License::   MIT ライセンスに準拠
 
@@ -21,15 +22,18 @@ $ ipa2adhoc.rb baseURL file…
 
 == 動作環境
 
-* plist の読み書きに RubyCocoa を使用しているので Mac OS X でなければ動作しません。
-* 以下のライブラリが必要です
-  * RubyCocoa
+* 以下のライブラリが必要です（gem でインストールできます）
   * zipruby
+  * CFPropertyList
 
 == TODO
 
 == 開発履歴
 
+* 1.1 2011-06-02
+  * バイナリplist の読み書きに CFPropertyList を使用するようにした 
+  * RubyCocoa を使わないので Mac OS X 以外の環境でも使用できるようになりました
+  * Ruby 1.9 に対応
 * 1.0.1 2011-03-10
   * Mac/PCでもアイコンが見れるように最適化前の PNG を保存するようにした
   * 引数が足りないときに Usage を表示するようにした
@@ -41,8 +45,8 @@ $ ipa2adhoc.rb baseURL file…
 
 require 'rubygems'
 require 'zipruby'
+require 'cfpropertylist'
 require 'tempfile'
-require 'osx/cocoa'
 require 'uri'
 
 
@@ -59,11 +63,8 @@ class IPA
 		Zip::Archive.open(path) do |archives|
 			archives.each do |a|
 				if /^Payload\/.+.app\/Info\.plist$/ =~ a.name
-					temp = Tempfile.new(File.basename(a.name))
-					temp.print(a.read)
-					temp.close
-
-					return OSX::NSDictionary.dictionaryWithContentsOfFile(temp.path)
+					plist = CFPropertyList::List.new({:data => a.read})
+					return CFPropertyList.native_types(plist.value)
 				end
 			end
 		end
@@ -89,8 +90,9 @@ class IPA
 		name = File.basename(saveName, '.*')
 		path = "#{name}.plist"
 
-		plist = OSX::NSDictionary.dictionaryWithDictionary(adhocPlist)
-		plist.writeToFile_atomically(path, true)
+		plist = CFPropertyList::List.new
+		plist.value = CFPropertyList.guess(adhocPlist)
+		plist.save(path, CFPropertyList::List::FORMAT_BINARY)
 
 		path
 	end
@@ -158,8 +160,7 @@ end
 if __FILE__ == $0
 	if ARGV.length < 2
 		cmd = File.basename(__FILE__)
-		print "Usage: #{cmd} baseURL file…\n"
-		exit
+		abort "Usage: #{cmd} baseURL file…\n"
 	end
 
 	baseURL = ARGV.shift
