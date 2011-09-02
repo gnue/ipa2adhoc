@@ -6,7 +6,7 @@
 = AdHocビルドのipaファイルからiOSデバイスに直接インストールするための plist と HTML を生成する
 
 Authors::   GNUE(鵺)
-Version::   1.1.1 2011-09-02 gnue
+Version::   1.2 2011-09-02 gnue
 Copyright:: Copyright (C) gnue, 2011. All rights reserved.
 License::   MIT ライセンスに準拠
 
@@ -14,7 +14,22 @@ License::   MIT ライセンスに準拠
 
 == 使い方
 
-$ ipa2adhoc.rb baseURL file…
+HTMLの生成
+
+  $ ipa2adhoc.rb baseURL FILES…
+  $ ipa2adhoc.rb -f CONFIG [FILES…]
+
+config.json と template.html の生成
+
+  $ ipa2adhoc.rb -g
+
+== 設定ファイル
+
+  {
+     "baseURL":  "http://foo.com/bar/",			// ベースURL（省略時は第１引数で指定）
+     "template": "template.html",				// テンプレートファイル（省略可）
+     "files":    ["foo.ipa", "bar.ipa"]			// ipaファイルのリスト（省略可）
+  }
 
 == 注意
 
@@ -25,12 +40,18 @@ $ ipa2adhoc.rb baseURL file…
 * 以下のライブラリが必要です（gem でインストールできます）
   * zipruby
   * CFPropertyList
+  * json
 * PNG を変換する pngcrush は iOS SDK に含まれています
 
 == TODO
 
+* CGI対応
+
 == 開発履歴
 
+* 1.2 2011-09-02
+  * 設定ファイル（JSON）を指定できるようにした
+  * テンプレートを指定できるようにした（設定ファイルで指定）
 * 1.1.1 2011-09-02
   * アイコンがみつからなくてもエラーにならないようにした
   * Info.plist に CFBundleIconFile がない場合は CFBundleIconFiles の最初の要素を使うようにした
@@ -51,6 +72,7 @@ $ ipa2adhoc.rb baseURL file…
 require 'rubygems'
 require 'zipruby'
 require 'cfpropertylist'
+require 'optparse'
 require 'tempfile'
 require 'uri'
 
@@ -148,9 +170,10 @@ class IPA
 end
 
 
-def adHocHTML(baseURL, adhocs)
+def adHocHTML(baseURL, adhocs, templateFile = nil)
 	# adHock用HTMLの生成
-	html = DATA.read
+	html = File.read(templateFile) if templateFile
+	html = DATA.read.lstrip if ! html
 
 	html.gsub(/(<!-- adhoc begin -->)((.|\n)+)(<!-- adhoc end -->)/) {
 		st = $1
@@ -170,26 +193,90 @@ end
 
 
 if __FILE__ == $0
-	if ARGV.length < 2
-		cmd = File.basename(__FILE__)
-		abort "Usage: #{cmd} baseURL file…\n"
+	CMD = File.basename $0
+
+	# 使い方
+	def usage
+		abort "Usage: #{CMD} baseURL FILES…\n" +
+			  "       #{CMD} -f CONFIG [FILES…]\n" +
+			  "  -f CONFIG   use json config file\n" +
+			  "  -g          genarete config and template file\n" +
+			  "  --help\n"
 	end
 
-	baseURL = ARGV.shift
+	# baseURL の末尾を必ず / にしておく
+	def directoryURL(url)
+		url.gsub(/\/$/, '') + '/'
+	end
+
+	def validFile(path, type)
+		abort "ERR: #{type} file '#{path}' not exits" if path && ! File.exists?(path)
+	end
+
+	def read_json(path)
+		validFile(path, 'config')
+
+		begin
+			require 'json'
+
+			data = File.read(path)
+			JSON.parse(data)
+		rescue
+			usage
+		end
+	end
+
+	def ganarate_templates(configFile = 'config.json', templateFile = 'template.html')
+		open(templateFile, 'w') { |f|
+			f.write(DATA.read.lstrip)
+		}
+
+		open(configFile, 'w') { |f|
+			f.write <<-EOS
+{
+	"baseURL":	"",
+	"template":	"#{templateFile}",
+	"files":	[]
+}
+			EOS
+		}
+		exit
+	end
+
+	# コマンド引数の解析
+	config = {}
+
+	opts = OptionParser.new
+	opts.on('-f CONFIG') { |v| config = read_json(v) }
+	opts.on('-g') { ganarate_templates }
+	opts.on('--help') { |v| usage }
+	opts.parse!(ARGV)
+
+	validFile(config['template'], 'template')
+
+	# baseURL
+	config['baseURL'] = ARGV.shift if ! config['baseURL']
+	usage if ! config['baseURL']
+
+	# files
+	config['files'] = [] if ! config['files']
+	config['files'].concat(ARGV)
+
+	# 初期化
 	adhocs = []
 
 	# baseURL の末尾を必ず / にしておく
-	baseURL = baseURL.gsub(/\/$/, '') + '/'
+	baseURL = directoryURL(config['baseURL'])
 
 	# adHock用のファイル生成
-	ARGV.each do |f|
+	config['files'].each do |f|
 		ipa = IPA.new(f, baseURL)
 		adhocs << ipa.ganerate
 	end
 
 	# Webページの生成
 	File.open("index.html", 'w') { |f|
-		f.print adHocHTML(baseURL, adhocs)
+		f.print adHocHTML(baseURL, adhocs, config['template'])
 	}
 end
 
