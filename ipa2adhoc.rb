@@ -156,7 +156,7 @@ def adHocHTML(baseURL, adhocs)
 		s = adhocs.map { |adhoc|
 			e = templ.clone
 			e.gsub!(/__ADHOCK_URL__/, baseURL + URI.escape(File.basename(adhoc['plistFile'])))
-			e.gsub!(/__APPICON__/, baseURL + URI.escape(File.basename(adhoc['iconFile'])))
+			e.gsub!(/__APPICON__/, baseURL + URI.escape(File.basename(adhoc['iconFile']))) if adhoc['iconFile']
 			e.gsub!(/__APPNAME__/, adhoc['appName'])
 		}
 
