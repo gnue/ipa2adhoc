@@ -6,7 +6,7 @@
 = AdHocビルドのipaファイルからiOSデバイスに直接インストールするための plist と HTML を生成する
 
 Authors::   GNUE(鵺)
-Version::   1.1 2011-06-02 gnue
+Version::   1.1.1 2011-09-02 gnue
 Copyright:: Copyright (C) gnue, 2011. All rights reserved.
 License::   MIT ライセンスに準拠
 
@@ -31,6 +31,9 @@ $ ipa2adhoc.rb baseURL file…
 
 == 開発履歴
 
+* 1.1.1 2011-09-02
+  * アイコンがみつからなくてもエラーにならないようにした
+  * Info.plist に CFBundleIconFile がない場合は CFBundleIconFiles の最初の要素を使うようにした
 * 1.1 2011-06-02
   * バイナリplist の読み書きに CFPropertyList を使用するようにした 
   * RubyCocoa を使わないので Mac OS X 以外の環境でも使用できるようになりました
@@ -102,6 +105,7 @@ class IPA
 	def writeIconFile(saveName = @path, appInfo = @appInfo)
 		# adHock用plistの保存
 		iconFile = appInfo['CFBundleIconFile']
+		iconFile = appInfo['CFBundleIconFiles'].first if ! iconFile
 		name = File.basename(saveName, '.*')
 		path = "#{name}.png"
 
