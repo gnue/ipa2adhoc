@@ -6,7 +6,7 @@
 = AdHocビルドのipaファイルからiOSデバイスに直接インストールするための plist と HTML を生成する
 
 Authors::   GNUE(鵺)
-Version::   1.2 2011-09-02 gnue
+Version::   1.2.1 2011-09-02 gnue
 Copyright:: Copyright (C) gnue, 2011. All rights reserved.
 License::   MIT ライセンスに準拠
 
@@ -16,8 +16,8 @@ License::   MIT ライセンスに準拠
 
 HTMLの生成
 
-  $ ipa2adhoc.rb baseURL FILES…
-  $ ipa2adhoc.rb -f CONFIG [FILES…]
+  $ ipa2adhoc.rb [-o OUTPUT] baseURL FILES…
+  $ ipa2adhoc.rb [-o OUTPUT] -f CONFIG [FILES…]
 
 config.json と template.html の生成
 
@@ -49,6 +49,8 @@ config.json と template.html の生成
 
 == 開発履歴
 
+* 1.2.1 2011-09-02
+  * 出力ディレクトリを指定できるようにした
 * 1.2 2011-09-02
   * 設定ファイル（JSON）を指定できるようにした
   * テンプレートを指定できるようにした（設定ファイルで指定）
@@ -75,6 +77,7 @@ require 'cfpropertylist'
 require 'optparse'
 require 'tempfile'
 require 'uri'
+require 'pathname'
 
 
 class IPA
@@ -197,8 +200,9 @@ if __FILE__ == $0
 
 	# 使い方
 	def usage
-		abort "Usage: #{CMD} baseURL FILES…\n" +
-			  "       #{CMD} -f CONFIG [FILES…]\n" +
+		abort "Usage: #{CMD} [-o OUTPUT] baseURL FILES…\n" +
+			  "       #{CMD} [-o OUTPUT] -f CONFIG [FILES…]\n" +
+			  "  -o OUTPUT   oputput directory\n" +
 			  "  -f CONFIG   use json config file\n" +
 			  "  -g          genarete config and template file\n" +
 			  "  --help\n"
@@ -248,11 +252,13 @@ if __FILE__ == $0
 
 	opts = OptionParser.new
 	opts.on('-f CONFIG') { |v| config = read_json(v) }
+	opts.on('-o OUTPUT') { |v| config['output'] = v }
 	opts.on('-g') { ganarate_templates }
 	opts.on('--help') { |v| usage }
 	opts.parse!(ARGV)
 
 	validFile(config['template'], 'template')
+	templateFile = Pathname.new(config['template']).realpath
 
 	# baseURL
 	config['baseURL'] = ARGV.shift if ! config['baseURL']
@@ -261,6 +267,22 @@ if __FILE__ == $0
 	# files
 	config['files'] = [] if ! config['files']
 	config['files'].concat(ARGV)
+
+	# output
+	if config['output'] then
+		require 'fileutils'
+
+		begin
+			Dir::mkdir(config['output'])
+		rescue Errno::EEXIST
+		end
+
+		config['files'].each do |f|
+			FileUtils.cp(f, config['output'])
+		end
+
+		Dir::chdir(config['output'])
+	end
 
 	# 初期化
 	adhocs = []
@@ -276,7 +298,7 @@ if __FILE__ == $0
 
 	# Webページの生成
 	File.open("index.html", 'w') { |f|
-		f.print adHocHTML(baseURL, adhocs, config['template'])
+		f.print adHocHTML(baseURL, adhocs, templateFile.to_s)
 	}
 end
 
