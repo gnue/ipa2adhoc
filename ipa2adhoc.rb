@@ -6,7 +6,7 @@
 = AdHocビルドのipaファイルからiOSデバイスに直接インストールするための plist と HTML を生成する
 
 Authors::   GNUE(鵺)
-Version::   1.2.2 2011-04-04 gnue
+Version::   1.2.3 2011-04-04 gnue
 Copyright:: Copyright (C) gnue, 2011-2012. All rights reserved.
 License::   MIT ライセンスに準拠
 
@@ -49,6 +49,9 @@ config.json と template.html の生成
 
 == 開発履歴
 
+* 1.2.3 2012-04-04
+  * 入力ファイルと出力ディレクトリが同じときエラーになってしまう問題を修正
+  * 出力ディレクトリの自動作成で途中のディレクトリも作成するようにした
 * 1.2.2 2012-04-04
   * xcode-select で pngcrush の実行ファイルを探すようにした
   * 設定ファイルで template を指定しないとエラーになってしまうバグを修正
@@ -281,13 +284,15 @@ if __FILE__ == $0
 	if config['output'] then
 		require 'fileutils'
 
-		FileUtils.mkpath(config['output'])
+		output_dir = File.expand_path(config['output'])
+		FileUtils.mkpath(output_dir)
 
 		config['files'].each do |f|
-			FileUtils.cp(f, config['output'])
+			dir = File.expand_path(File.dirname(f))
+			FileUtils.cp(f, output_dir) unless dir == output_dir
 		end
 
-		Dir.chdir(config['output'])
+		Dir.chdir(output_dir)
 	end
 
 	# 初期化
