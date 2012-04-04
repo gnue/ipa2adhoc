@@ -1,0 +1,23 @@
+#!/bin/sh
+#
+# An example hook script to prepare a packed repository for use over
+# dumb transports.
+#
+# To enable this hook, rename this file to "post-update".
+
+PATH=$HOME/bin:/usr/local/bin:$PATH
+DIR=$HOME/Sites/ipa
+
+function die {
+    echo $* 1>&2
+    exit 1
+}
+
+
+echo "ipa2adhoc:'$DIR'..."
+
+cd $DIR                           || die "[ERR]cd $DIR"
+git --git-dir=.git pull           || die "[ERR]git pull"
+ipa2adhoc.rb -f config.json *.ipa || die "[ERR]ipa2adhoc.rb"
+
+echo "...done"
