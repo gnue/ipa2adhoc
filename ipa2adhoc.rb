@@ -51,6 +51,7 @@ config.json と template.html の生成
 
 * 1.2.2 2012-04-04
   * xcode-select で pngcrush の実行ファイルを探すようにした
+  * 設定ファイルで template を指定しないとエラーになってしまうバグを修正
 * 1.2.1 2011-09-02
   * 出力ディレクトリを指定できるようにした
 * 1.2 2011-09-02
@@ -266,7 +267,7 @@ if __FILE__ == $0
 	opts.parse!(ARGV)
 
 	validFile(config['template'], 'template')
-	templateFile = Pathname.new(config['template']).realpath
+	templateFile = Pathname.new(config['template']).realpath if config['template']
 
 	# baseURL
 	config['baseURL'] = ARGV.shift if ! config['baseURL']
@@ -306,7 +307,7 @@ if __FILE__ == $0
 
 	# Webページの生成
 	File.open("index.html", 'w') { |f|
-		f.print adHocHTML(baseURL, adhocs, templateFile.to_s)
+		f.print adHocHTML(baseURL, adhocs, templateFile && templateFile.to_s)
 	}
 end
 
