@@ -287,7 +287,7 @@ if __FILE__ == $0
 			FileUtils.cp(f, config['output'])
 		end
 
-		Dir::chdir(config['output'])
+		Dir.chdir(config['output'])
 	end
 
 	# 初期化
