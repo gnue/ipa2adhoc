@@ -6,8 +6,8 @@
 = AdHocビルドのipaファイルからiOSデバイスに直接インストールするための plist と HTML を生成する
 
 Authors::   GNUE(鵺)
-Version::   1.2.1 2011-09-02 gnue
-Copyright:: Copyright (C) gnue, 2011. All rights reserved.
+Version::   1.2.2 2011-04-04 gnue
+Copyright:: Copyright (C) gnue, 2011-2012. All rights reserved.
 License::   MIT ライセンスに準拠
 
 　AdHocビルドのipaファイルからiOSデバイスに直接インストールするための plist と HTML を生成する
@@ -49,6 +49,8 @@ config.json と template.html の生成
 
 == 開発履歴
 
+* 1.2.2 2012-04-04
+  * xcode-select で pngcrush の実行ファイルを探すようにした
 * 1.2.1 2011-09-02
   * 出力ディレクトリを指定できるようにした
 * 1.2 2011-09-02
@@ -81,7 +83,13 @@ require 'pathname'
 
 
 class IPA
-	TOOLS = '/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin'
+	XCODE_SELECT = '/usr/bin/xcode-select'
+
+	if (File.executable?(XCODE_SELECT))
+		TOOLS = `#{XCODE_SELECT} -print-path`.chomp+'/Platforms/iPhoneOS.platform/Developer/usr/bin'
+	else
+		TOOLS = '/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin'
+	end
 
 	def initialize(path, baseURL)
 		@path = path
@@ -142,7 +150,7 @@ class IPA
 					icon = a.read
 
 					pngcrush = "#{TOOLS}/pngcrush"
-					if File.exists?(pngcrush)
+					if File.executable?(pngcrush)
 						# 最適化前の PNG に戻す
 						temp = Tempfile.new(path)
 						temp.write(icon)
