@@ -281,10 +281,7 @@ if __FILE__ == $0
 	if config['output'] then
 		require 'fileutils'
 
-		begin
-			Dir::mkdir(config['output'])
-		rescue Errno::EEXIST
-		end
+		FileUtils.mkpath(config['output'])
 
 		config['files'].each do |f|
 			FileUtils.cp(f, config['output'])
