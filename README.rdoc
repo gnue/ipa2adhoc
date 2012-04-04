@@ -1,0 +1,69 @@
+
+= AdHocビルドのipaファイルからiOSデバイスに直接インストールするための plist と HTML を生成する
+
+Authors::   GNUE(鵺)
+Version::   1.2.2 2011-04-04 gnue
+Copyright:: Copyright (C) gnue, 2011-2012. All rights reserved.
+License::   MIT ライセンスに準拠
+
+　AdHocビルドのipaファイルからiOSデバイスに直接インストールするための plist と HTML を生成する
+
+== 使い方
+
+HTMLの生成
+
+  $ ipa2adhoc.rb [-o OUTPUT] baseURL FILES…
+  $ ipa2adhoc.rb [-o OUTPUT] -f CONFIG [FILES…]
+
+config.json と template.html の生成
+
+  $ ipa2adhoc.rb -g
+
+== 設定ファイル
+
+  {
+     "baseURL":  "http://foo.com/bar/",			// ベースURL（省略時は第１引数で指定）
+     "template": "template.html",				// テンプレートファイル（省略可）
+     "files":    ["foo.ipa", "bar.ipa"]			// ipaファイルのリスト（省略可）
+  }
+
+== 注意
+
+* ipaファイルのファイル名に空白が入っているとインストールできません
+
+== 動作環境
+
+* 以下のライブラリが必要です（gem でインストールできます）
+  * zipruby
+  * CFPropertyList
+  * json
+* PNG を変換する pngcrush は iOS SDK に含まれています
+
+== TODO
+
+* CGI対応
+
+== 開発履歴
+
+* 1.2.2 2012-04-04
+  * xcode-select で pngcrush の実行ファイルを探すようにした
+  * 設定ファイルで template を指定しないとエラーになってしまうバグを修正
+* 1.2.1 2011-09-02
+  * 出力ディレクトリを指定できるようにした
+* 1.2 2011-09-02
+  * 設定ファイル（JSON）を指定できるようにした
+  * テンプレートを指定できるようにした（設定ファイルで指定）
+* 1.1.1 2011-09-02
+  * アイコンがみつからなくてもエラーにならないようにした
+  * Info.plist に CFBundleIconFile がない場合は CFBundleIconFiles の最初の要素を使うようにした
+* 1.1 2011-06-02
+  * バイナリplist の読み書きに CFPropertyList を使用するようにした 
+  * RubyCocoa を使わないので Mac OS X 以外の環境でも使用できるようになりました
+  * Ruby 1.9 に対応
+  * pngcrush がない場合は iOS用の PNG をそのまま使用するようにした
+* 1.0.1 2011-03-10
+  * Mac/PCでもアイコンが見れるように最適化前の PNG を保存するようにした
+  * 引数が足りないときに Usage を表示するようにした
+* 1.0 2011-02-02
+  * とりあえず作ってみた
+
