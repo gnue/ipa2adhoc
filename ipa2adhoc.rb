@@ -208,18 +208,6 @@ end
 
 
 if __FILE__ == $0
-	CMD = File.basename $0
-
-	# 使い方
-	def usage
-		abort "Usage: #{CMD} [-o OUTPUT] baseURL FILES…\n" +
-			  "       #{CMD} [-o OUTPUT] -f CONFIG [FILES…]\n" +
-			  "  -o OUTPUT   oputput directory\n" +
-			  "  -f CONFIG   use json config file\n" +
-			  "  -g          genarete config and template file\n" +
-			  "  --help\n"
-	end
-
 	# baseURL の末尾を必ず / にしておく
 	def directoryURL(url)
 		url.gsub(/\/$/, '') + '/'
@@ -237,8 +225,8 @@ if __FILE__ == $0
 
 			data = File.read(path)
 			JSON.parse(data)
-		rescue
-			usage
+		rescue Exception => e
+			abort e.to_s
 		end
 	end
 
@@ -262,19 +250,24 @@ if __FILE__ == $0
 	# コマンド引数の解析
 	config = {}
 
-	opts = OptionParser.new
-	opts.on('-f CONFIG') { |v| config = read_json(v) }
-	opts.on('-o OUTPUT') { |v| config['output'] = v }
-	opts.on('-g') { ganarate_templates }
-	opts.on('--help') { |v| usage }
-	opts.parse!(ARGV)
+	OptionParser.new { |opts|
+		opts.banner = "Usage: #{opts.program_name} [-o OUTPUT] baseURL FILES…\n" +
+					  "       #{opts.program_name} [-o OUTPUT] -f CONFIG [FILES…]"
 
+		opts.on('-o OUTPUT', 'oputput directory')			{ |v| config['output'] = v }
+		opts.on('-f CONFIG', 'use json config file')		{ |v| config.merge!(read_json(v)) }
+		opts.on('-g', 'genarete config and template file')	{ ganarate_templates }
+		opts.on('-h', '--help')								{ abort opts.help }
+		opts.parse!(ARGV)
+
+		# baseURL
+		config['baseURL'] = ARGV.shift if ! config['baseURL']
+		abort opts.help if ! config['baseURL']
+	}
+
+	# template
 	validFile(config['template'], 'template')
 	templateFile = Pathname.new(config['template']).realpath if config['template']
-
-	# baseURL
-	config['baseURL'] = ARGV.shift if ! config['baseURL']
-	usage if ! config['baseURL']
 
 	# files
 	config['files'] = [] if ! config['files']
