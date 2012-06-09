@@ -272,7 +272,7 @@ if __FILE__ == $0
 
 	# files
 	config['files'] = [] if ! config['files']
-	config['files'].concat(ARGV)
+	config['files'] += ARGV.reject { |x| x !~ /\.ipa$/ }
 
 	# output
 	if config['output'] then
