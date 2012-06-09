@@ -6,7 +6,7 @@
 = AdHocビルドのipaファイルからiOSデバイスに直接インストールするための plist と HTML を生成する
 
 Authors::   GNUE(鵺)
-Version::   1.2.3 2011-04-04 gnue
+Version::   1.2.4 2012-06-09 gnue
 Copyright:: Copyright (C) gnue, 2011-2012. All rights reserved.
 License::   MIT ライセンスに準拠
 
@@ -49,6 +49,11 @@ config.json と template.html の生成
 
 == 開発履歴
 
+* 1.2.4 2012-06-09
+  * ruby 1.9系において CFPropertyList::List.new でバイナリデータを読込もうとするとエラーになる問題に対応
+  * コマンド引数で * を指定したときに .ipa ファイル以外のファイルやディレクトリが対象になってしまいエラーになる問題に対応
+  * コマンド引数の解析を変更
+  * -v オプションでバージョン表示するようにした
 * 1.2.3 2012-04-04
   * 入力ファイルと出力ディレクトリが同じときエラーになってしまう問題を修正
   * 出力ディレクトリの自動作成で途中のディレクトリも作成するようにした
@@ -76,6 +81,7 @@ config.json と template.html の生成
 
 =end
 
+Version = '1.2.4'
 
 require 'rubygems'
 require 'zipruby'
