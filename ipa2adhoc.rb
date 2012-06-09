@@ -84,6 +84,7 @@ require 'optparse'
 require 'tempfile'
 require 'uri'
 require 'pathname'
+require 'stringio'
 
 
 class IPA
